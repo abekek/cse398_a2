@@ -22,17 +22,6 @@ cv2.imshow('Grey scale image',sample_small)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-# Convert the original image to HSV
-# and take H channel for further calculations
-sample_hsv = cv2.cvtColor(sample, cv2.COLOR_BGR2HSV)
-sample_h = sample_hsv[:, :, 0]
-
-# Show the H channel of the image
-sample_small = cv2.resize(sample_h, (640, 480))
-cv2.imshow('H channel of the image',sample_small)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
 # Convert the original image to grayscale
 sample_grey = cv2.cvtColor(sample, cv2.COLOR_BGR2GRAY)
 
@@ -50,17 +39,8 @@ cv2.imshow('Image after Otsu''s thresholding',sample_small)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-kernel = np.ones((10, 10),np.uint8)
-sample_res = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
-
-
-sample_small = cv2.resize(sample_res, (640, 480))
-cv2.imshow('Image after morphological transformation',sample_small)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
 # Find connected pixels and compose them into objects
-labels = measure.label(sample_res)
+labels = measure.label(binary_image)
 
 # Calculate features for each object;
 # For task3, since we want to differentiate
@@ -73,6 +53,7 @@ properties = measure.regionprops(labels)
 # - some intensity/color-based feature 2 (dimension 2)
 features = np.zeros((len(properties), 1))
 
+# find a major axis length as a feature
 for i in range(len(properties)):
     features[i] = properties[i].major_axis_length
 
@@ -83,8 +64,7 @@ plt.ylabel("Count")
 plt.show()
 plt.savefig('../output/task3_histogram.png')
 
-
-# *** Choose the thresholds for your features
+# *** Choose the threshold for your feature
 thrF1 = 40
 
 # *** It's time to classify, count and display the objects
