@@ -1,6 +1,3 @@
-# Modified from source
-# # Source - Adam Czajka, Jin Huang, September 2019
-
 import cv2
 import numpy as np
 from skimage import measure
@@ -18,7 +15,7 @@ matplotlib.interactive(True)
 plt.plot()
 
 # Read the image into grayscale
-sample = cv2.imread('../data/breakfast2.png')
+sample = cv2.imread('../data/pills.png')
 
 sample_small = cv2.resize(sample, (640, 480))
 cv2.imshow('Grey scale image',sample_small)
@@ -53,19 +50,8 @@ cv2.imshow('Image after Otsu''s thresholding',sample_small)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-
-# *** It's a good place to apply morphological opening, closing and erosion
-im_floodfill = binary_image.copy()
-h, w = binary_image.shape[ : 2]
-mask = np.zeros((h + 2, w + 2), np.uint8)
-cv2.floodFill(im_floodfill, mask, (0, 0), 255)
-im_floodfill_inv = cv2.bitwise_not(im_floodfill)
-binary_image = binary_image | im_floodfill_inv
-
 kernel = np.ones((10, 10),np.uint8)
 sample_res = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
-kernel = np.ones((12, 12),np.uint8)
-sample_res = cv2.erode(sample_res, kernel, iterations = 2)
 
 
 sample_small = cv2.resize(sample_res, (640, 480))
@@ -85,49 +71,40 @@ properties = measure.regionprops(labels)
 # *** Calculate features for each object:
 # - some geometrical feature 1 (dimension 1)
 # - some intensity/color-based feature 2 (dimension 2)
-features = np.zeros((len(properties), 2))
+features = np.zeros((len(properties), 1))
 
-properties_h = measure.regionprops(labels, sample_h)
+for i in range(len(properties)):
+    features[i] = properties[i].major_axis_length
 
-for i in range(0, len(properties)):
-    features[i, 0] = properties[i].perimeter 
-    features[i, 1] = properties_h[i].mean_intensity / 255.0
-
-# Show our objects in the feature space
-plt.plot(features[:, 0],features[:, 1], 'ro')
-plt.xlabel('Feature 1: perimeter')
-plt.ylabel('Feature 2: average gray scale value of H channel')
+# Now we can look at the histogram to select a global threshold
+plt.hist(features)
+plt.xlabel("Major axis length")
+plt.ylabel("Count")
 plt.show()
-plt.savefig('../output/task2_graph.png')
+plt.savefig('../output/task3_histogram.png')
 
 
 # *** Choose the thresholds for your features
-thrF1 = 220
-thrF2 = 0.2
+thrF1 = 40
 
 # *** It's time to classify, count and display the objects
-squares = 0
-blue_circles = 0
-red_circles = 0
+round_pills = 0
+oval_pills = 0
 
 fig, ax = plt.subplots()
 ax.imshow(cv2.cvtColor(sample, cv2.COLOR_BGR2RGB))
 
 for i in range(0, len(properties)):
-    if (features[i, 0] > thrF1 and features[i, 1] < thrF2):
-       squares = squares + 1
+    if (features[i, 0] > thrF1):
+       oval_pills = oval_pills + 1
        ax.plot(np.round(properties[i].centroid[1]), np.round(properties[i].centroid[0]), '.g', markersize=15)
 
-    if (features[i, 0] < thrF1 and features[i, 1] > thrF2):
-       blue_circles = blue_circles + 1
+    if (features[i, 0] < thrF1):
+       round_pills = round_pills + 1
        ax.plot(np.round(properties[i].centroid[1]), np.round(properties[i].centroid[0]), '.b', markersize=15)
 
-    if (features[i, 0] < thrF1 and features[i, 1] < thrF2):
-       red_circles = red_circles + 1
-       ax.plot(np.round(properties[i].centroid[1]), np.round(properties[i].centroid[0]), '.r', markersize=15)
-
 plt.show()
-plt.savefig('../output/task2.png')
+plt.savefig('../output/task3.png')
 
 # That's all! Let's display the result:
-print("I found %d squares, %d blue donuts, and %d red donuts." % (squares, blue_circles, red_circles))
+print("I found %d oval and %d round pills." % (oval_pills, round_pills))

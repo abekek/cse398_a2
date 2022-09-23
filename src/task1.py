@@ -74,7 +74,7 @@ plt.hist(his)
 plt.xlabel("Ratio")
 plt.ylabel("Count")
 plt.show()
-plt.savefig('../output/histogram.png')
+plt.savefig('../output/task1_histogram.png')
 
 # *** Select a proper threshold
 fThr = 1.5
