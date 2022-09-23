@@ -1,0 +1,102 @@
+# Modified from source
+# # Source - Adam Czajka, Jin Huang, September 2019
+
+import cv2
+import numpy as np
+from skimage import measure
+from sys import platform as sys_pf
+import warnings
+warnings.filterwarnings("ignore")
+
+if sys_pf == 'darwin':
+    import matplotlib
+    matplotlib.use("TKAgg")
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+matplotlib.interactive(True)
+plt.plot()
+# print(matplotlib.get_backend())
+
+# Read the image as grayscale
+sample = cv2.imread('../data/breakfast1.png', cv2.IMREAD_GRAYSCALE)
+
+sample_small = cv2.resize(sample, (640, 480))
+cv2.imshow('Grey scale image',sample_small)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+# Binarize the image using Otsu's method
+ret1, binary_image = cv2.threshold(sample, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+sample_small = cv2.resize(binary_image, (640, 480))
+cv2.imshow('Image after Otsu''s thresholding',sample_small)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+# *** Here is a good place to apply morphological operations
+
+# definition of a kernel (a.k.a. structuring element):
+kernel = np.ones((10, 10),np.uint8)
+# one iteration of morphological dilation:
+sample_res = cv2.dilate(binary_image, kernel, iterations = 1)
+# three iterations of morphological erosion:
+sample_res = cv2.erode(sample_res, kernel, iterations = 3)
+# definition of a smaller kernel (a.k.a. structuring element):
+kernel = np.ones((3, 3),np.uint8)
+# one iteration of morphological dilation:
+sample_res = cv2.dilate(sample_res, kernel, iterations = 1)
+
+sample_small = cv2.resize(sample_res, (640, 480))
+cv2.imshow('Image after morphological operations',sample_small)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+# Find connected pixels and groupd them into objects
+labels = measure.label(sample_res, connectivity=2, background=0)
+
+# Calculate features for each object; since we want to differentiate
+# between circular and oval shapes, the major and minor axes may help; we
+# will use also the centroid to annotate the final result
+features = measure.regionprops(labels)
+print("I found %d objects in total." % (len(features)))
+
+# In this task it is enough to calculate the ratio
+# between tha major and minor axes
+his = []
+for i in range(0, len(features)):
+    if features[i].minor_axis_length > 0:
+        his.append(features[i].major_axis_length / features[i].minor_axis_length)
+
+# Now we can look at the histogram to select a global threshold
+plt.hist(his)
+plt.xlabel("Ratio")
+plt.ylabel("Count")
+plt.show()
+plt.savefig('../output/histogram.png')
+
+# *** Select a proper threshold
+fThr = 1.5
+
+# It's time to classify, count and display the objects
+squares = 0
+cashews = 0
+
+fig, ax = plt.subplots()
+ax.imshow(sample, cmap=plt.cm.gray)
+
+for i in range(0, len(his)):
+    if his[i] <= fThr:
+        squares = squares + 1
+        y, x = features[i].centroid
+        ax.plot(x, y, '.g', markersize=10)
+    else:
+        cashews = cashews + 1
+        y, x = features[i].centroid
+        ax.plot(x, y, '.b', markersize=10)
+plt.show()
+plt.savefig('../output/task1.png')
+
+# That's all! Let's display the result:
+print("I found %d squares, and %d cashew nuts." % (squares, cashews))
