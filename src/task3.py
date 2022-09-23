@@ -48,9 +48,7 @@ labels = measure.label(binary_image)
 # will use also the centroid to annotate the final result
 properties = measure.regionprops(labels)
 
-# *** Calculate features for each object:
-# - some geometrical feature 1 (dimension 1)
-# - some intensity/color-based feature 2 (dimension 2)
+# Calculate features 
 features = np.zeros((len(properties), 1))
 
 # find a major axis length as a feature
